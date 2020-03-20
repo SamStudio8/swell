@@ -1,0 +1,102 @@
+import argparse
+import sys
+import pysam
+import numpy as np
+
+def load_scheme(scheme_bed):
+    l_tiles = []
+    tiles = {}
+    for line in open(scheme_bed):
+        ref, start, end, tile, pool = line.strip().split()
+        scheme, tile, side = tile.split("_", 2)
+
+        if tile not in tiles:
+            tiles[tile] = [0, 0]
+
+        if "LEFT" in side:
+            tiles[tile][0] = int(end)
+        elif "RIGHT" in side:
+            tiles[tile][1] = int(start)
+
+        if tiles[tile][0] != 0 and tiles[tile][1] != 0:
+            l_tiles.append((scheme, tile, tiles[tile]))
+
+    return l_tiles
+
+def swell_from_depth(depth_path, tiles, genome):
+    depth_fh = open(depth_path)
+    cursor = 0
+    tile_starts = [t[2][0] for t in tiles] # dont use -1 for 1-pos depth files
+    tile_ends = [t[2][1] for t in tiles]
+    closest_cursor = min(tile_starts)
+
+    stat_tiles = [0 for t in tiles]
+    tile_dat = [[] for t in tiles]
+
+    for line in depth_fh:
+        ref, pos, cov = line.strip().split()
+        if not ref.startswith(genome):
+            continue
+        pos = int(pos)
+        cov = int(cov)
+
+        # Check for new open tiles
+        if pos >= closest_cursor:
+            for t_i, t_start in enumerate(tile_starts):
+                if pos >= t_start and stat_tiles[t_i] == 0:
+                    stat_tiles[t_i] = 1
+
+            next_possible_min = []
+            for t_i, t_start in enumerate(tile_starts):
+                if stat_tiles[t_i] == 0:
+                    next_possible_min.append(t_start)
+            try:
+                closest_cursor = min(next_possible_min)
+            except ValueError:
+                closest_cursor = sys.maxsize
+
+        # Handle open tiles
+        for t_i, t_state in enumerate(stat_tiles):
+            if t_state == 1:
+                tile_dat[t_i].append(cov)
+
+            if tile_ends[t_i] <= pos:
+                stat_tiles[t_i] = -1
+
+    for t_i, (scheme_name, tile_num, tile) in enumerate(tiles):
+        len_win = len(tile_dat[t_i])
+        mean_cov = np.mean(tile_dat[t_i])
+        median_cov = np.median(tile_dat[t_i])
+        print(depth_path, tile_num, tile[0], tile[1], scheme_name, mean_cov, median_cov, len_win)
+
+def swell_from_bam(bam_path, tiles, genome):
+    bam = pysam.AlignmentFile(bam_path)
+
+    for (scheme_name, tile_num, tile) in tiles:
+        tile_cover = bam.count_coverage(genome, tile[0]-1, tile[1],
+                quality_threshold=0, read_callback="all")
+        flat_tile_cover = np.array(tile_cover).sum(axis=0)
+
+        mean_cov = np.mean(flat_tile_cover)
+        median_cov = np.median(flat_tile_cover)
+        print(bam_path, tile_num, tile[0], tile[1], scheme_name, mean_cov, median_cov)
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--bam")
+    group.add_argument("--depth")
+    parser.add_argument("--ref", required=True)
+    parser.add_argument("--bed", required=True)
+
+    args = parser.parse_args()
+
+    tiles = load_scheme(args.bed)
+    if args.bam:
+        swell_from_bam(args.bam, tiles, ref)
+    elif args.depth:
+        swell_from_depth(args.depth, tiles, ref)
+
+if __name__ == "__main__":
+    main()
