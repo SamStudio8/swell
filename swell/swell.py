@@ -23,7 +23,7 @@ def load_scheme(scheme_bed):
 
     return l_tiles
 
-def swell_from_depth(depth_path, tiles, genome):
+def swell_from_depth(depth_path, tiles, genomes):
     depth_fh = open(depth_path)
     cursor = 0
     tile_starts = [t[2][0] for t in tiles] # dont use -1 for 1-pos depth files
@@ -35,7 +35,7 @@ def swell_from_depth(depth_path, tiles, genome):
 
     for line in depth_fh:
         ref, pos, cov = line.strip().split()
-        if not ref.startswith(genome):
+        if sum([g in ref for g in genomes]) != 1:
             continue
         pos = int(pos)
         cov = int(cov)
@@ -87,14 +87,14 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--bam")
     group.add_argument("--depth")
-    parser.add_argument("--ref", required=True)
+    parser.add_argument("--ref", required=True, nargs='+')
     parser.add_argument("--bed", required=True)
 
     args = parser.parse_args()
 
     tiles = load_scheme(args.bed)
     if args.bam:
-        swell_from_bam(args.bam, tiles, args.ref)
+        swell_from_bam(args.bam, tiles, args.ref[0])
     elif args.depth:
         swell_from_depth(args.depth, tiles, args.ref)
 
