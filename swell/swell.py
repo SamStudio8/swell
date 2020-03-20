@@ -94,9 +94,9 @@ def main():
 
     tiles = load_scheme(args.bed)
     if args.bam:
-        swell_from_bam(args.bam, tiles, ref)
+        swell_from_bam(args.bam, tiles, args.ref)
     elif args.depth:
-        swell_from_depth(args.depth, tiles, ref)
+        swell_from_depth(args.depth, tiles, args.ref)
 
 if __name__ == "__main__":
     main()
