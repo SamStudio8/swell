@@ -34,7 +34,7 @@ def swell_from_depth(depth_path, tiles, genomes):
     tile_dat = [[] for t in tiles]
 
     for line in depth_fh:
-        ref, pos, cov = line.strip().split()
+        ref, pos, cov = line.strip().split('\t')
         if sum([g in ref for g in genomes]) != 1:
             continue
         pos = int(pos)
