@@ -4,21 +4,35 @@ import pysam
 import numpy as np
 
 def load_scheme(scheme_bed):
-    l_tiles = []
     tiles = {}
-    for line in open(scheme_bed):
+    scheme_fh = open(scheme_bed)
+
+    for line in scheme_fh:
         ref, start, end, tile, pool = line.strip().split()
         scheme, tile, side = tile.split("_", 2)
 
         if tile not in tiles:
-            tiles[tile] = [0, 0]
+            tiles[tile] = [-1, -1]
 
-        if "LEFT" in side:
-            tiles[tile][0] = int(end)
-        elif "RIGHT" in side:
-            tiles[tile][1] = int(start)
+        if "LEFT" in side.upper():
+            if tiles[tile][0] == -1:
+                tiles[tile][0] = int(end)
+            elif tiles[tile][0] < int(end):
+                # If using multiple products for one tile, take the smallest window
+                tiles[tile][0] = int(end)
 
-        if tiles[tile][0] != 0 and tiles[tile][1] != 0:
+        elif "RIGHT" in side.upper():
+            if tiles[tile][1] == -1:
+                tiles[tile][1] = int(start)
+            elif tiles[tile][1] > int(start):
+                tiles[tile][1] = int(start)
+
+    l_tiles = []
+    scheme_fh.seek(0)
+    for line in scheme_fh:
+        ref, start, end, tile, pool = line.strip().split()
+        scheme, tile, side = tile.split("_", 2)
+        if tiles[tile][0] != -1 and tiles[tile][1] != -1:
             l_tiles.append((scheme, tile, tiles[tile]))
 
     return l_tiles
