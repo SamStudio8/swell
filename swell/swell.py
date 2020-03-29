@@ -65,7 +65,7 @@ def swell_from_fasta(fasta_path):
         prop_masked = num_masked / num_bases * 100.0
         prop_invalid = num_invalid / num_bases * 100.0
 
-    return [fasta_path, num_seqs, num_bases, prop_acgt, prop_masked, prop_invalid]
+    return ["fasta_path", "num_seqs", "num_bases", "pc_acgt", "pc_masked", "pc_invalid"], [fasta_path, num_seqs, num_bases, prop_acgt, prop_masked, prop_invalid]
 
 
 
@@ -157,7 +157,7 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds):
     if len(tile_vector) == 0:
         tile_vector.append(0)
 
-    return [depth_path, n_positions, avg_cov] + ['*'] + threshold_counts_prop + ['*'] + tile_threshold_counts_prop + ['*', ",".join(["%.2f" % x for x in tile_vector])]
+    return ["depth_path", "num_pos", "mean_cov"] + ["pc_pos_cov_gte%d" % x for x in sorted(thresholds)] + ["pc_tiles_meancov_gte%d" % x for x in sorted(thresholds)] + ["tile_vector"], [depth_path, n_positions, avg_cov] + threshold_counts_prop + tile_threshold_counts_prop + [",".join(["%.2f" % x for x in tile_vector])]
 
 #def swell_from_bam(bam_path, tiles, genome):
 #    bam = pysam.AlignmentFile(bam_path)
@@ -195,10 +195,17 @@ def main():
     #elif args.depth:
     #    swell_from_depth(args.depth, tiles, args.ref)
     fields = []
-    fields.extend(swell_from_fasta(args.fasta))
-    fields.append('*')
-    fields.extend(swell_from_depth(args.depth, tiles, args.ref, args.thresholds))
+    header = []
 
+    header_, fields_ = swell_from_fasta(args.fasta)
+    header.extend(header_)
+    fields.extend(fields_)
+
+    header_, fields_ = swell_from_depth(args.depth, tiles, args.ref, args.thresholds)
+    header.extend(header_)
+    fields.extend(fields_)
+
+    print("\t".join(header))
     fields_s = [("%."+str(args.dp)+"f") % x if "float" in type(x).__name__ else str(x) for x in fields] # do not fucking @ me
     print("\t".join([str(x) for x in fields_s]))
 
