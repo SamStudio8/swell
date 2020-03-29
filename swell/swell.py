@@ -83,30 +83,34 @@ def swell_from_depth(depth_path, tiles, genomes):
         median_cov = np.median(tile_dat[t_i])
         print(depth_path, tile_num, tile[0], tile[1], scheme_name, mean_cov, median_cov, len_win)
 
-def swell_from_bam(bam_path, tiles, genome):
-    bam = pysam.AlignmentFile(bam_path)
-
-    for (scheme_name, tile_num, tile) in tiles:
-        tile_cover = bam.count_coverage(genome, tile[0]-1, tile[1],
-                quality_threshold=0, read_callback="all")
-        flat_tile_cover = np.array(tile_cover).sum(axis=0)
-
-        mean_cov = np.mean(flat_tile_cover)
-        median_cov = np.median(flat_tile_cover)
-        print(bam_path, tile_num, tile[0], tile[1], scheme_name, mean_cov, median_cov)
+#def swell_from_bam(bam_path, tiles, genome):
+#    bam = pysam.AlignmentFile(bam_path)
+#
+#    for (scheme_name, tile_num, tile) in tiles:
+#        tile_cover = bam.count_coverage(genome, tile[0]-1, tile[1],
+#                quality_threshold=0, read_callback="all")
+#        flat_tile_cover = np.array(tile_cover).sum(axis=0)
+#
+#        mean_cov = np.mean(flat_tile_cover)
+#        median_cov = np.median(flat_tile_cover)
+#        print(bam_path, tile_num, tile[0], tile[1], scheme_name, mean_cov, median_cov)
 
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    group = parser.add_mutually_exclusive_group(required=True)
+#    group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--bam")
     group.add_argument("--depth")
     parser.add_argument("--ref", required=True, nargs='+')
-    parser.add_argument("--bed", required=True)
+    parser.add_argument("--bed", required=False)
 
     args = parser.parse_args()
 
-    tiles = load_scheme(args.bed)
+    if args.bed:
+        tiles = load_scheme(args.bed)
+    else:
+        tiles = {}
+
     if args.bam:
         swell_from_bam(args.bam, tiles, args.ref[0])
     elif args.depth:
