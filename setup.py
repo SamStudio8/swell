@@ -5,7 +5,7 @@ import setuptools
 
 setuptools.setup(
     name="swell",
-    version="0.0.8",
+    version="0.0.9",
     url="https://github.com/samstudio8/swell",
 
     description="A command line tool for surfing your coverage",

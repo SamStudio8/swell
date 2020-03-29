@@ -200,7 +200,7 @@ def main():
     fields.extend(swell_from_depth(args.depth, tiles, args.ref, args.thresholds))
 
     fields_s = [("%."+str(args.dp)+"f") % x if "float" in type(x).__name__ else str(x) for x in fields] # do not fucking @ me
-    print("\t".join([str(x) for x in fields]))
+    print("\t".join([str(x) for x in fields_s]))
 
 if __name__ == "__main__":
     main()
