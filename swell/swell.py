@@ -37,6 +37,38 @@ def load_scheme(scheme_bed):
 
     return l_tiles
 
+def swell_from_fasta(fasta_path):
+    num_seqs = 0
+    num_bases = 0
+    num_acgt = 0
+    num_masked = 0
+    num_invalid = 0
+
+    prop_acgt = 0
+    prop_masked = 0
+    prop_invalid = 0
+
+    if fasta_path:
+        from . import readfq # thanks heng
+        heng_iter = readfq.readfq(open(fasta_path))
+        for name, seq, qual in heng_iter:
+            num_seqs += 1
+            for base in seq:
+                num_bases += 1
+                if base.upper() in ['A', 'C', 'G', 'T']:
+                    num_acgt += 1
+                elif base.upper() in ['N']:
+                    num_masked += 1
+                elif base.upper() in ['X', '-', '_', ' ']:
+                    num_invalid += 1
+        prop_acgt = num_acgt / num_bases * 100.0
+        prop_masked = num_masked / num_bases * 100.0
+        prop_invalid = num_invalid / num_bases * 100.0
+
+    return [fasta_path, num_seqs, num_bases, prop_acgt, prop_masked, prop_invalid]
+
+
+
 def swell_from_depth(depth_path, tiles, genomes, thresholds):
     depth_fh = open(depth_path)
 
@@ -125,9 +157,7 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds):
     if len(tile_vector) == 0:
         tile_vector.append("-")
 
-    print("\t".join([str(x) for x in
-        [depth_path, n_positions, avg_cov] + ['*'] + threshold_counts_prop + ['*'] + tile_threshold_counts_prop + ['*', ",".join(tile_vector)]
-    ]))
+    return [depth_path, n_positions, avg_cov] + ['*'] + threshold_counts_prop + ['*'] + tile_threshold_counts_prop + ['*', ",".join(tile_vector)]
 
 #def swell_from_bam(bam_path, tiles, genome):
 #    bam = pysam.AlignmentFile(bam_path)
@@ -150,6 +180,7 @@ def main():
     parser.add_argument("--ref", required=True, nargs='+')
     parser.add_argument("--thresholds", action='append', type=int, nargs='+', default=[1, 5, 10, 25, 50, 100, 200])
     parser.add_argument("--bed", required=False)
+    parser.add_argument("--fasta", required=False)
 
     args = parser.parse_args()
 
@@ -162,7 +193,11 @@ def main():
     #    swell_from_bam(args.bam, tiles, args.ref[0])
     #elif args.depth:
     #    swell_from_depth(args.depth, tiles, args.ref)
-    swell_from_depth(args.depth, tiles, args.ref, args.thresholds)
+    fields = []
+    fields.extend(swell_from_fasta(args.fasta))
+    fields.append('*')
+    fields.extend(swell_from_depth(args.depth, tiles, args.ref, args.thresholds))
+    print("\t".join([str(x) for x in fields]))
 
 if __name__ == "__main__":
     main()
