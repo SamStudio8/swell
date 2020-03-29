@@ -155,7 +155,7 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds):
         tile_threshold_counts_prop = [0 for x in sorted(thresholds)]
 
     if len(tile_vector) == 0:
-        tile_vector.append("-")
+        tile_vector.append(0)
 
     return [depth_path, n_positions, avg_cov] + ['*'] + threshold_counts_prop + ['*'] + tile_threshold_counts_prop + ['*', ",".join(["%.2f" % x for x in tile_vector])]
 
