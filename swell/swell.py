@@ -157,7 +157,7 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds):
     if len(tile_vector) == 0:
         tile_vector.append("-")
 
-    return [depth_path, n_positions, avg_cov] + ['*'] + threshold_counts_prop + ['*'] + tile_threshold_counts_prop + ['*', ",".join(["%.2f" for x in tile_vector])]
+    return [depth_path, n_positions, avg_cov] + ['*'] + threshold_counts_prop + ['*'] + tile_threshold_counts_prop + ['*', ",".join(["%.2f" % x for x in tile_vector])]
 
 #def swell_from_bam(bam_path, tiles, genome):
 #    bam = pysam.AlignmentFile(bam_path)
