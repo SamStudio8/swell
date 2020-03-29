@@ -37,15 +37,26 @@ def load_scheme(scheme_bed):
 
     return l_tiles
 
-def swell_from_depth(depth_path, tiles, genomes):
+def swell_from_depth(depth_path, tiles, genomes, thresholds):
     depth_fh = open(depth_path)
-    cursor = 0
-    tile_starts = [t[2][0] for t in tiles] # dont use -1 for 1-pos depth files
-    tile_ends = [t[2][1] for t in tiles]
-    closest_cursor = min(tile_starts)
 
-    stat_tiles = [0 for t in tiles]
-    tile_dat = [[] for t in tiles]
+    threshold_counters = {
+        threshold: 0 for threshold in thresholds
+    }
+    tile_threshold_counters = {
+        threshold: 0 for threshold in thresholds
+    }
+    n_positions = 0
+    avg_cov = 0
+
+    cursor = 0
+    if tiles:
+        tile_starts = [t[2][0] for t in tiles] # dont use -1 for 1-pos depth files
+        tile_ends = [t[2][1] for t in tiles]
+        closest_cursor = min(tile_starts)
+
+        stat_tiles = [0 for t in tiles]
+        tile_dat = [[] for t in tiles]
 
     for line in depth_fh:
         ref, pos, cov = line.strip().split('\t')
@@ -54,34 +65,63 @@ def swell_from_depth(depth_path, tiles, genomes):
         pos = int(pos)
         cov = int(cov)
 
-        # Check for new open tiles
-        if pos >= closest_cursor:
-            for t_i, t_start in enumerate(tile_starts):
-                if pos >= t_start and stat_tiles[t_i] == 0:
-                    stat_tiles[t_i] = 1
+        # Count positions above threshold
+        for threshold in threshold_counters:
+            if cov >= threshold:
+                threshold_counters[threshold] += 1
+        n_positions += 1
+        avg_cov = avg_cov + (cov - avg_cov)/n_positions
 
-            next_possible_min = []
-            for t_i, t_start in enumerate(tile_starts):
-                if stat_tiles[t_i] == 0:
-                    next_possible_min.append(t_start)
-            try:
-                closest_cursor = min(next_possible_min)
-            except ValueError:
-                closest_cursor = sys.maxsize
+        if tiles:
+            # Check for new open tiles
+            if pos >= closest_cursor:
+                for t_i, t_start in enumerate(tile_starts):
+                    if pos >= t_start and stat_tiles[t_i] == 0:
+                        stat_tiles[t_i] = 1
 
-        # Handle open tiles
-        for t_i, t_state in enumerate(stat_tiles):
-            if t_state == 1:
-                tile_dat[t_i].append(cov)
+                next_possible_min = []
+                for t_i, t_start in enumerate(tile_starts):
+                    if stat_tiles[t_i] == 0:
+                        next_possible_min.append(t_start)
+                try:
+                    closest_cursor = min(next_possible_min)
+                except ValueError:
+                    closest_cursor = sys.maxsize
 
-            if tile_ends[t_i] <= pos:
-                stat_tiles[t_i] = -1
+            # Handle open tiles
+            for t_i, t_state in enumerate(stat_tiles):
+                if t_state == 1:
+                    tile_dat[t_i].append(cov)
+
+                if tile_ends[t_i] <= pos:
+                    stat_tiles[t_i] = -1
 
     for t_i, (scheme_name, tile_num, tile) in enumerate(tiles):
         len_win = len(tile_dat[t_i])
         mean_cov = np.mean(tile_dat[t_i])
         median_cov = np.median(tile_dat[t_i])
+
+        # Count tile means above threshold
+        for threshold in threshold_counters:
+            if mean_cov >= threshold:
+                tile_threshold_counters[threshold] += 1
+
         print(depth_path, tile_num, tile[0], tile[1], scheme_name, mean_cov, median_cov, len_win)
+
+
+    if n_positions > 0:
+        threshold_counts_prop = [threshold_counters[x]/n_positions * 100.0 for x in sorted(thresholds)]
+    else:
+        threshold_counts_prop = [0 for x in sorted(thresholds)]
+
+    if len(tiles) > 0:
+        tile_threshold_counts_prop = [tile_threshold_counters[x]/len(tiles) * 100.0 for x in sorted(thresholds)]
+    else:
+        tile_threshold_counts_prop = [0 for x in sorted(thresholds)]
+
+    print("\t".join([str(x) for x in
+        [depth_path, n_positions, avg_cov] + ['*'] + threshold_counts_prop + ['*'] + tile_threshold_counts_prop
+    ]))
 
 #def swell_from_bam(bam_path, tiles, genome):
 #    bam = pysam.AlignmentFile(bam_path)
@@ -99,9 +139,10 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
 #    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--bam")
-    group.add_argument("--depth")
+#    group.add_argument("--bam")
+    parser.add_argument("--depth", required=True)
     parser.add_argument("--ref", required=True, nargs='+')
+    parser.add_argument("--thresholds", action='append', type=int, nargs='+', default=[1, 5, 10, 25, 50, 100, 200])
     parser.add_argument("--bed", required=False)
 
     args = parser.parse_args()
@@ -111,10 +152,11 @@ def main():
     else:
         tiles = {}
 
-    if args.bam:
-        swell_from_bam(args.bam, tiles, args.ref[0])
-    elif args.depth:
-        swell_from_depth(args.depth, tiles, args.ref)
+    #if args.bam:
+    #    swell_from_bam(args.bam, tiles, args.ref[0])
+    #elif args.depth:
+    #    swell_from_depth(args.depth, tiles, args.ref)
+    swell_from_depth(args.depth, tiles, args.ref, args.thresholds)
 
 if __name__ == "__main__":
     main()
