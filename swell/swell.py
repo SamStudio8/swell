@@ -96,17 +96,20 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds):
                 if tile_ends[t_i] <= pos:
                     stat_tiles[t_i] = -1
 
+    tile_vector = []
     for t_i, (scheme_name, tile_num, tile) in enumerate(tiles):
         len_win = len(tile_dat[t_i])
         mean_cov = np.mean(tile_dat[t_i])
         median_cov = np.median(tile_dat[t_i])
+
+        tile_vector.append(mean_cov)
 
         # Count tile means above threshold
         for threshold in threshold_counters:
             if mean_cov >= threshold:
                 tile_threshold_counters[threshold] += 1
 
-        print(depth_path, tile_num, tile[0], tile[1], scheme_name, mean_cov, median_cov, len_win)
+        #print(depth_path, tile_num, tile[0], tile[1], scheme_name, mean_cov, median_cov, len_win)
 
 
     if n_positions > 0:
@@ -119,8 +122,11 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds):
     else:
         tile_threshold_counts_prop = [0 for x in sorted(thresholds)]
 
+    if len(tile_vector) == 0:
+        tile_vector.append("-")
+
     print("\t".join([str(x) for x in
-        [depth_path, n_positions, avg_cov] + ['*'] + threshold_counts_prop + ['*'] + tile_threshold_counts_prop
+        [depth_path, n_positions, avg_cov] + ['*'] + threshold_counts_prop + ['*'] + tile_threshold_counts_prop + ['*', ",".join(tile_vector)]
     ]))
 
 #def swell_from_bam(bam_path, tiles, genome):
