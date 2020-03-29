@@ -181,6 +181,7 @@ def main():
     parser.add_argument("--thresholds", action='append', type=int, nargs='+', default=[1, 5, 10, 25, 50, 100, 200])
     parser.add_argument("--bed", required=False)
     parser.add_argument("--fasta", required=False)
+    parser.add_argument("--dp", default=2, type=int, required=False)
 
     args = parser.parse_args()
 
@@ -197,6 +198,8 @@ def main():
     fields.extend(swell_from_fasta(args.fasta))
     fields.append('*')
     fields.extend(swell_from_depth(args.depth, tiles, args.ref, args.thresholds))
+
+    fields_s = [("%."+str(args.dp)+"f") % x if "float" in type(x).__name__ else str(x) for x in fields] # do not fucking @ me
     print("\t".join([str(x) for x in fields]))
 
 if __name__ == "__main__":
