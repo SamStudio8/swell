@@ -61,9 +61,13 @@ def swell_from_fasta(fasta_path):
                     num_masked += 1
                 elif base.upper() in ['X', '-', '_', ' ']:
                     num_invalid += 1
-        prop_acgt = num_acgt / num_bases * 100.0
-        prop_masked = num_masked / num_bases * 100.0
-        prop_invalid = num_invalid / num_bases * 100.0
+
+        if num_bases > 0:
+            prop_acgt = num_acgt / num_bases * 100.0
+            prop_masked = num_masked / num_bases * 100.0
+            prop_invalid = num_invalid / num_bases * 100.0
+        else:
+            prop_invalid = 100.0
 
     return ["fasta_path", "num_seqs", "num_bases", "pc_acgt", "pc_masked", "pc_invalid"], [fasta_path, num_seqs, num_bases, prop_acgt, prop_masked, prop_invalid]
 
