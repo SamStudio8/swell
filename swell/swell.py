@@ -182,7 +182,7 @@ def main():
 #    group.add_argument("--bam")
     parser.add_argument("--depth", required=True)
     parser.add_argument("--ref", required=True, nargs='+')
-    parser.add_argument("--thresholds", action='append', type=int, nargs='+', default=[1, 5, 10, 25, 50, 100, 200])
+    parser.add_argument("--thresholds", action='append', type=int, nargs='+', default=[1, 5, 10, 20, 50, 100, 200])
     parser.add_argument("--bed", required=False)
     parser.add_argument("--fasta", required=False)
     parser.add_argument("--dp", default=2, type=int, required=False)
