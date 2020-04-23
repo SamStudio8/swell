@@ -28,12 +28,15 @@ def load_scheme(scheme_bed):
                 tiles[tile][1] = int(start)
 
     l_tiles = []
+    tiles_seen = set([])
     scheme_fh.seek(0)
     for line in scheme_fh:
         ref, start, end, tile, pool = line.strip().split()
         scheme, tile, side = tile.split("_", 2)
-        if tiles[tile][0] != -1 and tiles[tile][1] != -1:
-            l_tiles.append((scheme, tile, tiles[tile]))
+        tile_tup = (scheme, tile, tiles[tile])
+        if tiles[tile][0] != -1 and tiles[tile][1] != -1 and tile_tup not in tiles_seen:
+            l_tiles.append(tile_tup)
+            tiles_seen.add(tile_tup)
 
     return l_tiles
 
