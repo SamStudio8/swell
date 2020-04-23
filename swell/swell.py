@@ -70,9 +70,16 @@ def swell_from_fasta(fasta_path):
     num_masked = 0
     num_invalid = 0
 
+    n_ungaps = []
+    n_gaps = []
+    curr_gap_len = 0
+    curr_ungap_len = 0
+
     prop_acgt = 0
     prop_masked = 0
     prop_invalid = 0
+    max_gap = 0
+    max_ungap = 0
 
     if fasta_path:
         from . import readfq # thanks heng
@@ -81,21 +88,44 @@ def swell_from_fasta(fasta_path):
             num_seqs += 1
             for base in seq:
                 num_bases += 1
+                gap = 1
+
                 if base.upper() in ['A', 'C', 'G', 'T']:
                     num_acgt += 1
+                    gap = 0
+
                 elif base.upper() in ['N']:
                     num_masked += 1
                 elif base.upper() in ['X', '-', '_', ' ']:
                     num_invalid += 1
 
+                if gap:
+                    if curr_ungap_len > 0:
+                        n_ungaps.append(curr_ungap_len)
+                        curr_ungap_len = 0
+                    curr_gap_len += 1
+
+                elif not gap:
+                    if curr_gap_len > 0:
+                        n_gaps.append(curr_gap_len)
+                        curr_gap_len = 0
+                    curr_ungap_len += 1
+
+        if curr_gap_len > 0:
+            n_gaps.append(curr_gap_len)
+        elif curr_ungap_len > 0:
+            n_gaps.append(curr_ungap_len)
+
         if num_bases > 0:
             prop_acgt = num_acgt / num_bases * 100.0
             prop_masked = num_masked / num_bases * 100.0
             prop_invalid = num_invalid / num_bases * 100.0
+            max_gap = max(n_gaps)
+            max_ungap = max(n_ungaps)
         else:
             prop_invalid = 100.0
 
-    return ["fasta_path", "num_seqs", "num_bases", "pc_acgt", "pc_masked", "pc_invalid"], [fasta_path, num_seqs, num_bases, prop_acgt, prop_masked, prop_invalid]
+    return ["fasta_path", "num_seqs", "num_bases", "pc_acgt", "pc_masked", "pc_invalid", "longest_gap", "longest_ungap"], [fasta_path, num_seqs, num_bases, prop_acgt, prop_masked, prop_invalid, max_gap, max_ungap]
 
 
 
