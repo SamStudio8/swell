@@ -34,9 +34,9 @@ def load_scheme(scheme_bed):
         ref, start, end, tile, pool = line.strip().split()
         scheme, tile, side = tile.split("_", 2)
         tile_tup = (scheme, tile, tiles[tile])
-        if tiles[tile][0] != -1 and tiles[tile][1] != -1 and tile_tup not in tiles_seen:
+        if tiles[tile][0] != -1 and tiles[tile][1] != -1 and tile not in tiles_seen:
             l_tiles.append(tile_tup)
-            tiles_seen.add(tile_tup)
+            tiles_seen.add(tile)
 
     return l_tiles
 
