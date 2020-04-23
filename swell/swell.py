@@ -38,7 +38,26 @@ def load_scheme(scheme_bed):
             l_tiles.append(tile_tup)
             tiles_seen.add(tile)
 
-    return l_tiles
+    l_tiles = sorted(l_tiles, key=lambda x: int(x[1])) # sort by tile number
+
+    # iterate through tiles and clip
+    new_tiles = []
+    for tile_i0, tile_t in enumerate(l_tiles):
+        tile = tile_t[2][:]
+
+        # Clip the start of this window to the end of the last window
+        # (if there is a last window)
+        if (tile_i0 - 1) >= 0:
+            tile[0] = l_tiles[tile_i0 - 1][2][1]
+
+        # Clip the end of this window to the start of the next window
+        # (if there is a next window)
+        if (tile_i0 + 1) < len(l_tiles):
+            tile[1] = l_tiles[tile_i0 + 1][2][0]
+
+        new_tiles.append((tile_t[0], tile_t[1], tile))
+
+    return new_tiles
 
 def swell_from_fasta(fasta_path):
     num_seqs = 0
