@@ -47,18 +47,17 @@ def load_scheme(scheme_bed):
     # iterate through tiles and clip
     new_tiles = []
     for tile_i0, tile_t in enumerate(l_tiles):
-        print(tile_t)
         tile = tile_t[2][:]
 
         # Clip the start of this window to the end of the last window
         # (if there is a last window)
         if (tile_i0 - 1) >= 0:
-            tile[1] = l_tiles[tile_i0 - 1][2][3]
+            tile[1] = l_tiles[tile_i0 - 1][2][3] + 1
 
         # Clip the end of this window to the start of the next window
         # (if there is a next window)
         if (tile_i0 + 1) < len(l_tiles):
-            tile[2] = l_tiles[tile_i0 + 1][2][0]
+            tile[2] = l_tiles[tile_i0 + 1][2][0] - 1
 
         new_tiles.append((tile_t[0], tile_t[1], tile))
 
