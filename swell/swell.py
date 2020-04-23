@@ -198,7 +198,7 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds):
 
         # Count tile means above threshold
         for threshold in threshold_counters:
-            if mean_cov >= threshold:
+            if median_cov >= threshold:
                 tile_threshold_counters[threshold] += 1
 
         #print(depth_path, tile_num, tile[0], tile[1], scheme_name, mean_cov, median_cov, len_win)
