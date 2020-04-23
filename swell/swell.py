@@ -52,12 +52,12 @@ def load_scheme(scheme_bed):
         # Clip the start of this window to the end of the last window
         # (if there is a last window)
         if (tile_i0 - 1) >= 0:
-            tile[1] = l_tiles[tile_i0 - 1][2][3] + 5
+            tile[1] = l_tiles[tile_i0 - 1][2][3]
 
         # Clip the end of this window to the start of the next window
         # (if there is a next window)
         if (tile_i0 + 1) < len(l_tiles):
-            tile[2] = l_tiles[tile_i0 + 1][2][0] - 5
+            tile[2] = l_tiles[tile_i0 + 1][2][0]
 
         new_tiles.append((tile_t[0], tile_t[1], tile))
 
@@ -164,7 +164,7 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds):
         mean_cov = np.mean(tile_dat[t_i])
         median_cov = np.median(tile_dat[t_i])
 
-        tile_vector.append(mean_cov)
+        tile_vector.append(median_cov)
 
         # Count tile means above threshold
         for threshold in threshold_counters:
