@@ -12,20 +12,23 @@ def load_scheme(scheme_bed):
         scheme, tile, side = tile.split("_", 2)
 
         if tile not in tiles:
-            tiles[tile] = [-1, -1]
+            tiles[tile] = [-1, -1, -1, -1]
+            # start, inside start, inside end, end
 
         if "LEFT" in side.upper():
-            if tiles[tile][0] == -1:
-                tiles[tile][0] = int(end)
-            elif tiles[tile][0] < int(end):
-                # If using multiple products for one tile, take the smallest window
-                tiles[tile][0] = int(end)
+            if tiles[tile][1] == -1:
+                tiles[tile][1] = int(end)
+                tiles[tile][0] = int(start)
+            #elif tiles[tile][1] < int(end):
+            #    # If using multiple products for one tile, take the smallest window
+            #    tiles[tile][1] = int(end)
 
         elif "RIGHT" in side.upper():
-            if tiles[tile][1] == -1:
-                tiles[tile][1] = int(start)
-            elif tiles[tile][1] > int(start):
-                tiles[tile][1] = int(start)
+            if tiles[tile][2] == -1:
+                tiles[tile][2] = int(start)
+                tiles[tile][3] = int(end)
+            #elif tiles[tile][2] > int(start):
+            #    tiles[tile][2] = int(start)
 
     l_tiles = []
     tiles_seen = set([])
@@ -34,26 +37,28 @@ def load_scheme(scheme_bed):
         ref, start, end, tile, pool = line.strip().split()
         scheme, tile, side = tile.split("_", 2)
         tile_tup = (scheme, tile, tiles[tile])
-        if tiles[tile][0] != -1 and tiles[tile][1] != -1 and tile not in tiles_seen:
+        if tiles[tile][1] != -1 and tiles[tile][2] != -1 and tile not in tiles_seen:
             l_tiles.append(tile_tup)
             tiles_seen.add(tile)
 
     l_tiles = sorted(l_tiles, key=lambda x: int(x[1])) # sort by tile number
 
+
     # iterate through tiles and clip
     new_tiles = []
     for tile_i0, tile_t in enumerate(l_tiles):
+        print(tile_t)
         tile = tile_t[2][:]
 
         # Clip the start of this window to the end of the last window
         # (if there is a last window)
         if (tile_i0 - 1) >= 0:
-            tile[0] = l_tiles[tile_i0 - 1][2][1]
+            tile[1] = l_tiles[tile_i0 - 1][2][3]
 
         # Clip the end of this window to the start of the next window
         # (if there is a next window)
         if (tile_i0 + 1) < len(l_tiles):
-            tile[1] = l_tiles[tile_i0 + 1][2][0]
+            tile[2] = l_tiles[tile_i0 + 1][2][0]
 
         new_tiles.append((tile_t[0], tile_t[1], tile))
 
@@ -109,8 +114,8 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds):
 
     cursor = 0
     if tiles:
-        tile_starts = [t[2][0] for t in tiles] # dont use -1 for 1-pos depth files
-        tile_ends = [t[2][1] for t in tiles]
+        tile_starts = [t[2][1] for t in tiles] # dont use -1 for 1-pos depth files
+        tile_ends = [t[2][2] for t in tiles]
         closest_cursor = min(tile_starts)
 
         stat_tiles = [0 for t in tiles]
