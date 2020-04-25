@@ -120,8 +120,16 @@ def swell_from_fasta(fasta_path):
             prop_acgt = num_acgt / num_bases * 100.0
             prop_masked = num_masked / num_bases * 100.0
             prop_invalid = num_invalid / num_bases * 100.0
-            max_gap = max(n_gaps)
-            max_ungap = max(n_ungaps)
+
+            if len(n_gaps) > 0:
+                max_gap = max(n_gaps)
+            else:
+                max_gap = 0
+
+            if len(n_ungaps) > 0:
+                max_ungap = max(n_ungaps)
+            else:
+                max_ungap = 0
         else:
             prop_invalid = 100.0
 
