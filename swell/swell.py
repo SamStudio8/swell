@@ -223,9 +223,11 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds):
         tile_threshold_counts_prop = [0 for x in sorted(thresholds)]
 
     if len(tile_vector) == 0:
-        tile_vector.append(0)
+        tile_vector_str = "-"
+    else:
+        tile_vector_str = ",".join(["%.2f" % x for x in tile_vector])
 
-    return ["bam_path", "num_pos", "mean_cov"] + ["pc_pos_cov_gte%d" % x for x in sorted(thresholds)] + ["pc_tiles_medcov_gte%d" % x for x in sorted(thresholds)] + ["tile_vector"], [depth_path.replace(".depth", ""), n_positions, avg_cov] + threshold_counts_prop + tile_threshold_counts_prop + [",".join(["%.2f" % x for x in tile_vector])]
+    return ["bam_path", "num_pos", "mean_cov"] + ["pc_pos_cov_gte%d" % x for x in sorted(thresholds)] + ["pc_tiles_medcov_gte%d" % x for x in sorted(thresholds)] + ["tile_n", "tile_vector"], [depth_path.replace(".depth", ""), n_positions, avg_cov] + threshold_counts_prop + tile_threshold_counts_prop + [len(tile_vector), tile_vector_str]
 
 #def swell_from_bam(bam_path, tiles, genome):
 #    bam = pysam.AlignmentFile(bam_path)
@@ -250,6 +252,7 @@ def main():
     parser.add_argument("--bed", required=False)
     parser.add_argument("--fasta", required=False)
     parser.add_argument("--dp", default=2, type=int, required=False)
+    parser.add_argument("-x", action="append", nargs=2, metavar=("key", "value",))
 
     args = parser.parse_args()
 
@@ -272,6 +275,16 @@ def main():
     header_, fields_ = swell_from_depth(args.depth, tiles, args.ref, args.thresholds)
     header.extend(header_)
     fields.extend(fields_)
+
+    keys = []
+    values = []
+    if hasattr(args, "x"):
+        for meta in args.x:
+            keys.append(meta[0])
+            values.append(meta[1])
+    header.extend(keys)
+    fields.extend(values)
+
 
     print("\t".join(header))
     fields_s = [("%."+str(args.dp)+"f") % x if "float" in type(x).__name__ else str(x) for x in fields] # do not fucking @ me
