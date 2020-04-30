@@ -4,31 +4,47 @@ import pysam
 import numpy as np
 
 def load_scheme(scheme_bed):
-    tiles = {}
+    tiles_d = {}
     scheme_fh = open(scheme_bed)
 
     for line in scheme_fh:
         ref, start, end, tile, pool = line.strip().split()
         scheme, tile, side = tile.split("_", 2)
 
-        if tile not in tiles:
-            tiles[tile] = [-1, -1, -1, -1]
-            # start, inside start, inside end, end
+        start = int(start)
+        end = int(end)
+
+        if tile not in tiles_d:
+            tiles_d[tile] = {
+                "start": -1,
+                "inside_start": -1,
+                "inside_end": -1,
+                "end": -1,
+            }
 
         if "LEFT" in side.upper():
-            if tiles[tile][1] == -1:
-                tiles[tile][1] = int(end)
-                tiles[tile][0] = int(start)
-            #elif tiles[tile][1] < int(end):
-            #    # If using multiple products for one tile, take the smallest window
-            #    tiles[tile][1] = int(end)
+            if tiles_d[tile]["start"] == -1:
+                tiles_d[tile]["start"] = start
+                tiles_d[tile]["inside_start"] = end
+
+            if start < tiles_d[tile]["start"]:
+                # push the window region to the leftmost left position
+                tiles_d[tile]["start"] = start
+            if end > tiles_d[tile]["inside_start"]:
+                # open the start of the inner window to the rightmost left position
+                tiles_d[tile]["inside_start"] = end
 
         elif "RIGHT" in side.upper():
-            if tiles[tile][2] == -1:
-                tiles[tile][2] = int(start)
-                tiles[tile][3] = int(end)
-            #elif tiles[tile][2] > int(start):
-            #    tiles[tile][2] = int(start)
+            if tiles_d[tile]["end"] == -1:
+                tiles_d[tile]["end"] = end
+                tiles_d[tile]["inside_end"] = start
+
+            if end > tiles_d[tile]["end"]:
+                # stretch the window out to the rightmost right position
+                tiles_d[tile]["end"] = end
+            if start < tiles_d[tile]["inside_end"]:
+                # close the end of the inner window to the leftmost right position
+                tiles_d[tile]["inside_end"] = start
 
     l_tiles = []
     tiles_seen = set([])
@@ -36,8 +52,8 @@ def load_scheme(scheme_bed):
     for line in scheme_fh:
         ref, start, end, tile, pool = line.strip().split()
         scheme, tile, side = tile.split("_", 2)
-        tile_tup = (scheme, tile, tiles[tile])
-        if tiles[tile][1] != -1 and tiles[tile][2] != -1 and tile not in tiles_seen:
+        tile_tup = (scheme, tile, tiles_d[tile])
+        if tiles_d[tile]["inside_start"] != -1 and tiles_d[tile]["inside_end"] != -1 and tile not in tiles_seen:
             l_tiles.append(tile_tup)
             tiles_seen.add(tile)
 
@@ -47,17 +63,17 @@ def load_scheme(scheme_bed):
     # iterate through tiles and clip
     new_tiles = []
     for tile_i0, tile_t in enumerate(l_tiles):
-        tile = tile_t[2][:]
+        tile = dict(tile_t[2]) # copy the dict god this is gross stuff
 
         # Clip the start of this window to the end of the last window
         # (if there is a last window)
         if (tile_i0 - 1) >= 0:
-            tile[1] = l_tiles[tile_i0 - 1][2][3]
+            tile["inside_start"] = l_tiles[tile_i0 - 1][2]["end"]
 
         # Clip the end of this window to the start of the next window
         # (if there is a next window)
         if (tile_i0 + 1) < len(l_tiles):
-            tile[2] = l_tiles[tile_i0 + 1][2][0]
+            tile["inside_end"] = l_tiles[tile_i0 + 1][2]["start"]
 
         new_tiles.append((tile_t[0], tile_t[1], tile))
 
@@ -151,8 +167,8 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds):
 
     cursor = 0
     if tiles:
-        tile_starts = [t[2][1] for t in tiles] # dont use -1 for 1-pos depth files
-        tile_ends = [t[2][2] for t in tiles]
+        tile_starts = [t[2]["inner_start"] for t in tiles] # dont use -1 for 1-pos depth files
+        tile_ends = [t[2]["inner_end"] for t in tiles]
         closest_cursor = min(tile_starts)
 
         stat_tiles = [0 for t in tiles]
