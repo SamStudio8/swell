@@ -167,8 +167,8 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds):
 
     cursor = 0
     if tiles:
-        tile_starts = [t[2]["inner_start"] for t in tiles] # dont use -1 for 1-pos depth files
-        tile_ends = [t[2]["inner_end"] for t in tiles]
+        tile_starts = [t[2]["inside_start"] for t in tiles] # dont use -1 for 1-pos depth files
+        tile_ends = [t[2]["inside_end"] for t in tiles]
         closest_cursor = min(tile_starts)
 
         stat_tiles = [0 for t in tiles]
