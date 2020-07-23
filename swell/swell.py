@@ -153,7 +153,7 @@ def swell_from_fasta(fasta_path):
 
 
 
-def swell_from_depth(depth_path, tiles, genomes, thresholds):
+def swell_from_depth(depth_path, tiles, genomes, thresholds, min_pos=None):
     depth_fh = open(depth_path)
 
     threshold_counters = {
@@ -227,6 +227,10 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds):
 
         #print(depth_path, tile_num, tile[0], tile[1], scheme_name, mean_cov, median_cov, len_win)
 
+    if min_pos:
+        if n_positions < min_pos:
+            sys.stderr.write("[FAIL] BAM has fewer than %d positions covered by the allowed reference list.\n" % min_pos)
+            sys.exit(2)
 
     if n_positions > 0:
         threshold_counts_prop = [threshold_counters[x]/n_positions * 100.0 for x in sorted(thresholds)]
@@ -268,6 +272,7 @@ def main():
     parser.add_argument("--bed", required=False)
     parser.add_argument("--fasta", required=False)
     parser.add_argument("--dp", default=2, type=int, required=False)
+    parser.add_argument("--min-pos", type=int, required=False)
     parser.add_argument("-x", action="append", nargs=2, metavar=("key", "value",))
 
     args = parser.parse_args()
@@ -288,7 +293,7 @@ def main():
     header.extend(header_)
     fields.extend(fields_)
 
-    header_, fields_ = swell_from_depth(args.depth, tiles, args.ref, args.thresholds)
+    header_, fields_ = swell_from_depth(args.depth, tiles, args.ref, args.thresholds, min_pos=args.min_pos)
     header.extend(header_)
     fields.extend(fields_)
 
