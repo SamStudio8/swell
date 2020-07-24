@@ -153,7 +153,7 @@ def swell_from_fasta(fasta_path):
 
 
 
-def swell_from_depth(depth_path, tiles, genomes, thresholds, min_pos=None):
+def swell_from_depth(depth_path, tiles, genomes, thresholds, min_pos=None, min_pos_total_zero=False):
     depth_fh = open(depth_path)
 
     threshold_counters = {
@@ -174,7 +174,9 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds, min_pos=None):
         stat_tiles = [0 for t in tiles]
         tile_dat = [[] for t in tiles]
 
+    n_lines = 0
     for line in depth_fh:
+        n_lines += 1
         ref, pos, cov = line.strip().split('\t')
         if sum([g in ref for g in genomes]) != 1:
             continue
@@ -229,8 +231,12 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds, min_pos=None):
 
     if min_pos:
         if n_positions < min_pos:
-            sys.stderr.write("[FAIL] BAM has fewer than %d positions covered by the allowed reference list.\n" % min_pos)
-            sys.exit(2)
+            if min_pos_total_zero:
+                #TODO This probably only works for depth with -a not -aa?
+                sys.stderr.write("[FAIL] BAM has no reads aligned to allowed reference list, but we'll ignore this as seems to have no reads at all.")
+            else:
+                sys.stderr.write("[FAIL] BAM has fewer than %d positions covered by the allowed reference list.\n" % min_pos)
+                sys.exit(3)
 
     if n_positions > 0:
         threshold_counts_prop = [threshold_counters[x]/n_positions * 100.0 for x in sorted(thresholds)]
@@ -273,6 +279,7 @@ def main():
     parser.add_argument("--fasta", required=False)
     parser.add_argument("--dp", default=2, type=int, required=False)
     parser.add_argument("--min-pos", type=int, required=False)
+    parser.add_argument("--min-pos-allow-total-zero", action="store_true")
     parser.add_argument("-x", action="append", nargs=2, metavar=("key", "value",))
 
     args = parser.parse_args()
@@ -293,7 +300,7 @@ def main():
     header.extend(header_)
     fields.extend(fields_)
 
-    header_, fields_ = swell_from_depth(args.depth, tiles, args.ref, args.thresholds, min_pos=args.min_pos)
+    header_, fields_ = swell_from_depth(args.depth, tiles, args.ref, args.thresholds, min_pos=args.min_pos, min_pos_total_zero=args.min_pos_allow_total_zero)
     header.extend(header_)
     fields.extend(fields_)
 
