@@ -231,7 +231,7 @@ def swell_from_depth(depth_path, tiles, genomes, thresholds, min_pos=None, min_p
 
     if min_pos:
         if n_positions < min_pos:
-            if min_pos_total_zero:
+            if min_pos_total_zero and n_lines == 0:
                 #TODO This probably only works for depth with -a not -aa?
                 sys.stderr.write("[FAIL] BAM has no reads aligned to allowed reference list, but we'll ignore this as seems to have no reads at all.")
             else:
